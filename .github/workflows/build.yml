@@ -5,7 +5,7 @@ on:
     branches:
     - '*'
   push:
-    branches: [ MK3, MK3_* ]
+    branches: [ MK3, MK3_*, automated_build ]
     tags:
     - 'v*'
 

@@ -80,9 +80,18 @@ A minimal Dockerfile equivalent to the CI steps:
 
 One caveat applies: `bootstrap.py` downloads `avr-gcc` and `prusa3dboards` from external URLs (Microchip and Prusa's GitHub raw content) during the build, so the container build requires network access at build time. For an offline or fully reproducible image, pre-populate `.dependencies/` on the host and `COPY` it into the image instead of invoking `bootstrap.py` inside the build.
 
+### Rollout plan
+
+Firmware modifications are planned on the `automated_build` branch, with further modifications expected afterward. Rather than introducing a Docker-based pipeline immediately, the existing GitHub Actions workflow is reused first:
+
+1. `.github/workflows/build.yml` `push.branches` has been extended to include `automated_build` (in addition to `MK3`, `MK3_*`), so pushes to that branch now run the existing `build`, `check-lang`, and `tests` jobs on GitHub-hosted `ubuntu-latest` runners.
+2. Pushing the branch and observing a green run on GitHub-hosted runners validates that the current build requirements (documented above) are sufficient and that the modifications compile cleanly, before any container-based tooling is introduced.
+3. A Docker-based build (local or as an alternative CI path) remains an optional follow-up, to be revisited only if GitHub-hosted runners prove insufficient (for example, for hermetic/offline builds or local reproduction of CI failures) — see the Docker feasibility findings above, which remain valid whenever that need arises.
+
 ## Consequences
 
 - Contributors and CI maintainers have a single reference for build prerequisites without cross-referencing multiple READMEs and workflow files.
 - Docker-based builds (local reproducible environments, alternative CI runners, or release packaging) are confirmed feasible using the toolchain already exercised by the official CI, without requiring any repository changes.
 - No `Dockerfile` is added to the repository by this ADR; the example above is illustrative only. Adding an official, maintained `Dockerfile` would be a separate follow-up decision.
 - The network dependency in `bootstrap.py` means containerized builds are not reproducible offline unless `.dependencies/` is pre-staged, which should be considered if hermetic builds become a requirement.
+- Validating the `automated_build` branch on GitHub-hosted runners first means firmware modifications get build feedback without any new CI infrastructure to maintain; Docker-based CI/CD stays a documented option rather than immediate work.
